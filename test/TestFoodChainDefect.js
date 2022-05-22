@@ -15,6 +15,7 @@ contract("Test FoodChain defect report", accounts => {
     let wholesaler1 = null;
     let retailer1 = null;
 
+    //A 'Test FoodChain Forward'-ban tesztelt állapot előállítása
     before(async () => {
         foodChaininstance = await FoodChain.deployed();
     
@@ -57,14 +58,11 @@ contract("Test FoodChain defect report", accounts => {
         await foodChaininstance.splitChunkToItem( 1, 2 ,  { from: retailer1 });
       });
 
+      //Legrosszabb eset tesztelése, amikor már végig haladt a láncon az alapanyag, de megjelöli hibásként a farmja
       it("should mark Alma (id: 0) spoiled Farm1.", async () => {
         await foodChaininstance.reportDefectFarm(0 , {from: farm1 });
+        //segédváltozók az ellenőrzéshez
         const defectreports = await foodChaininstance.getDefectReports.call();
-        /*
-        const defectreport = await defectreports[0];
-        //const defectreport = await DefectReport.at(defectreportaddress);
-        const spoiledentities = await foodChaininstance.getSpoiledEntitiesOfDR(0);
-        */
 
         const itemlist = await foodChaininstance.getItems.call();
         const itemaddress = await itemlist[1];
@@ -82,15 +80,6 @@ contract("Test FoodChain defect report", accounts => {
         assert(await product.isSpoiled(), "The first product should be spoiled");
         assert(await item.isSpoiled(), "The second item should be spoiled");
         assert.equal(await resource.isSpoiled(), false ,  "The fourth resource (repa) should not be spoiled");
-    
-        /*
-        for (let i = 0; i< spoiledentities.length; i++) {
-          const elementaddress = await spoiledentities[i];
-          const element = await ChainElement.at(elementaddress);
-          console.log(await element.getName() , await element.getID());
-        }
-        */
-        
       });
 
 

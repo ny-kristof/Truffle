@@ -18,7 +18,7 @@ contract("Test FoodChain forward", accounts => {
 
   before(async () => {
     foodChaininstance = await FoodChain.deployed();
-
+    //lokális változók hozzárendelése a ganache test account-jaihoz
     owner = accounts[0];
     farm1 = accounts[1];
     factory1 = accounts[2];
@@ -28,6 +28,7 @@ contract("Test FoodChain forward", accounts => {
     retailer1 = accounts[6];
   });
 
+  //A szerződés tulajdonosa sikeresen regisztrál mindenkit
   it("should register the accouts.", async () => {
     await foodChaininstance.addParticipant(farm1, 1, { from: owner });
     await foodChaininstance.addParticipant(factory1, 3, { from: owner });
@@ -43,6 +44,7 @@ contract("Test FoodChain forward", accounts => {
     assert.equal(await foodChaininstance.getParticipant(retailer1), 5 , "Retailer not registered as a retailer");
   });
 
+  //A tulajdonoson kívül ne tudjon más regisztrálni résztvevőt
   it("should NOT register another farm." , async () =>{
     try {
       await foodChaininstance.addParticipant(farm2, 1, {from: farm1});
@@ -72,6 +74,7 @@ contract("Test FoodChain forward", accounts => {
   });
 
   it("should register a shipment from Farm1 to Factory1.", async () => {
+                                          //honnan, hová,   melyik alapanyagokat
     await foodChaininstance.registerShipment(farm1, factory1, [0,2] ,  { from: shipper1 });
     const shipmentssarray = await foodChaininstance.getShipments.call();
     assert.equal( await shipmentssarray.length, 1 , "There should be a registered shipment." );
@@ -89,6 +92,7 @@ contract("Test FoodChain forward", accounts => {
     assert.equal( await productsarray.length, 1 , "There should be a registered product." );
   });
 
+  //Ne lehessen olyan terméket regisztrálni, ami nem lett még az adott gyárhoz szállítva
   it("should NOT register a product Factory1.", async () => {
     try {
       await foodChaininstance.registerProduct("repasceklaspite", [3, 5] ,  { from: factory1 });
@@ -98,6 +102,7 @@ contract("Test FoodChain forward", accounts => {
     }
     assert(false, "New product from not shipped entity is registered.");
   });
+
 
   it("should register a shipment from Factory1 to Wholesaler1.", async () => {
     await foodChaininstance.registerShipment(factory1, wholesaler1, [0] ,  { from: shipper1 });
@@ -130,6 +135,7 @@ contract("Test FoodChain forward", accounts => {
 
   it("should split a chunk to 2 items Retailer1.", async () => {
     await foodChaininstance.splitChunkToItem( 1, 2 ,  { from: retailer1 });
+    //segédváltozók az ellenőrzéshez
     const itemarray = await foodChaininstance.getItems.call();
     const seconditem = await itemarray[1];
     let item = await Item.at(seconditem);
@@ -140,12 +146,11 @@ contract("Test FoodChain forward", accounts => {
     assert.equal(owner, accounts[6], "The owner should be the retailer." );
   });
 
+  //Egy alapanyag teljes életútja után sikeresen megjelölünk egy végterméket hibásként
   it("should mark the item spoiled Retailer1.", async () => {
-    await foodChaininstance.reportDefectShipmentToRetailer(1 , {from: shipper1 });
+    await foodChaininstance.reportDefectRetailer(1 , {from: retailer1 });
+    //segédváltozók az ellenőrzéshez
     const defectreports = await foodChaininstance.getDefectReports.call();
-    const defectreport = await defectreports[0];
-    //const defectreport = await DefectReport.at(defectreportaddress);
-    const spoiledentities = await foodChaininstance.getSpoiledEntitiesOfDR(0);
 
     const itemlist = await foodChaininstance.getItems.call();
     const itemaddress = await itemlist[1];
@@ -162,6 +167,7 @@ contract("Test FoodChain forward", accounts => {
     assert.equal(await defectreports.length , 1 , "There should be a registered defect report.");
     assert(await item.isSpoiled(), "The second item should be spoiled");
     assert.equal(await resource.isSpoiled(), false ,  "The fourth resource (repa) should not be spoiled");
+    assert.equal(await product.isSpoiled(), false ,  "The first product  should not be spoiled");
 
   });
 

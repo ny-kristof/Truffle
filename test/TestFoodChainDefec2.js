@@ -15,6 +15,9 @@ contract("Test FoodChain defect report2", accounts => {
     let wholesaler1 = null;
     let retailer1 = null;
 
+    //A 'Test FoodChain Defect' kiinduló állapotának létrehozása, ezen felül
+    // -> farm2-ről érkezett alapanyagokból termék
+    // -> ennek szállítása és 5 chunk-ra bontása
     before(async () => {
         foodChaininstance = await FoodChain.deployed();
     
@@ -60,14 +63,15 @@ contract("Test FoodChain defect report2", accounts => {
         await foodChaininstance.splitChunkToItem( 1, 2 ,  { from: retailer1 });
       });
 
+      //első farmról érkező alapanyag megjelölése hibásként
+      // ->az ebből készült termék hibás, de a másik farmról érkező alapanyagokból készült termék nem
+      // ->a másik farmról érkező alapanyag nem hibás
+      // ->a nem hibás termékből bontott chunk sem hibás
+      // ->de a hibás termékből származott végtermék hibás
       it("should mark Banan spoiled Shipper1.", async () => {
-        await foodChaininstance.reportDefectShipmentToFactory(0 , {from: shipper1 });
+        await foodChaininstance.reportDefectShipmentToFactory(0 , {from: factory1 });
+        //segédváltozók az ellenőrzéshez
         const defectreports = await foodChaininstance.getDefectReports.call();
-        /*
-        const defectreport = await defectreports[0];
-        //const defectreport = await DefectReport.at(defectreportaddress);
-        const spoiledentities = await foodChaininstance.getSpoiledEntitiesOfDR(0);
-        */
         
         const itemlist = await foodChaininstance.getItems.call();
         const itemaddress = await itemlist[1];
@@ -99,6 +103,7 @@ contract("Test FoodChain defect report2", accounts => {
     
       });
 
+      //Hibás alapanyagból nem készülhet újra termék
       it("should NOT register another product from Alma.", async () => {
         try {
           await foodChaininstance.registerProduct("almasceklaspite", [0,5] ,  { from: factory1 });
@@ -109,6 +114,7 @@ contract("Test FoodChain defect report2", accounts => {
         assert(false, "New product from spoiled entity is registered.");
       });
 
+      //Hibás termék nemből nem bontható chunk
       it("should NOT split the product into chunks.", async () => {
         try {
           await foodChaininstance.splitProductToChunk( 0, 3 ,  { from: wholesaler1 });

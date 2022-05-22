@@ -2,6 +2,8 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
+//Az entitások ősosztálya, ebből származnak a következő osztályok:
+//Resource, Product, Chunk, Item 
 abstract contract ChainElement {
 
     uint  ID;
